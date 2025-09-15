@@ -1,31 +1,41 @@
 import multer from 'multer';
 import path from 'path';
+import crypto from 'crypto'; // A built-in Node.js module for creating random strings
 
 /**
- * Multer is a middleware that handles 'multipart/form-data', which is used for file uploads.
- * This configuration tells Multer how to process the incoming annotated image.
+ * This multer configuration provides more control over file storage.
+ * Instead of just a destination, we define a storage engine.
  */
+const storage = multer.diskStorage({
+  // Tell multer to save files to the 'uploads/' directory.
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  // Generate a unique filename while keeping the original extension.
+  filename: (req, file, cb) => {
+    // Create a random 16-character string to prevent filename conflicts.
+    const uniqueSuffix = crypto.randomBytes(16).toString('hex');
+    // Get the original file extension (e.g., '.png').
+    const extension = path.extname(file.originalname);
+    // Combine them to create the final filename.
+    cb(null, `${uniqueSuffix}${extension}`);
+  },
+});
+
 const upload = multer({
-  // 'dest' specifies a temporary directory to store the uploaded files.
-  // You must create this 'uploads/' folder in the root of your backend project.
-  dest: 'uploads/',
-
-  // Set a file size limit to prevent overly large uploads (e.g., 10MB).
-  limits: { fileSize: 10 * 1024 * 1024 },
-
-  // A filter to ensure only valid image file types are accepted.
+  storage: storage, // Use our new diskStorage configuration.
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit.
   fileFilter: (req, file, cb) => {
     const allowedFileTypes = /jpeg|jpg|png/;
     const isMimeTypeAllowed = allowedFileTypes.test(file.mimetype);
     const isExtensionAllowed = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
 
     if (isMimeTypeAllowed && isExtensionAllowed) {
-      // If the file is an allowed type, accept it.
       return cb(null, true);
     }
-    // Otherwise, reject the file with an error.
     cb(new Error('File upload rejected: Only PNG, JPG, or JPEG file types are supported.'));
   },
 });
 
 export default upload;
+

@@ -10,7 +10,7 @@ import upload from "../config/multer.js";
 export const projectRouter = Router();
 
 projectRouter.get("/:projectId", getProjectByID);
-projectRouter.post("/create", createProject);
+projectRouter.post("/create",upload.single('imageUrl'), createProject);
 
 projectRouter.post("/:projectId/annotations", addAnnotationToProject);
 

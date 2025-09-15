@@ -3,6 +3,7 @@ import fs from "fs";
 import ProjectModel from "../models/projectModel.js";
 import AnnotationModel from "../models/annotationModel.js";
 import { generateBrdExcel } from "../services/excelExportService.js";
+import cloudinary from "../config/cloudinary.js";
 
 export interface RequestWithFile extends Request {
   file?: any; // 'file' is optional because not every request will have it
@@ -25,17 +26,37 @@ export const getProjectByID = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-export const createProject = async (req: Request, res: Response) => {
+
+export const createProject = async (req: RequestWithFile, res: Response) => {
   try {
-    const { imageUrl } = req.body;
-    if (!imageUrl) {
-      return res.status(400).json({ message: "Image URL is required" });
+    console.log("here")
+    // 1. Check if a file was successfully saved by multer
+    if (!req.file) {
+      return res.status(400).json({ message: "Image file is required." });
     }
 
+    // 2. Upload the file to Cloudinary directly from its temporary path
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: "visual-brd-projects", // A folder name in your Cloudinary account
+    });
+
+    // 3. IMPORTANT: Delete the temporary file from your server's 'uploads' folder
+    fs.unlinkSync(req.file.path);
+
+    // 4. Get the secure URL from the Cloudinary response
+    const imageUrl = uploadResult.secure_url;
+
+    // 5. Create the new project in the database with the Cloudinary URL
     const newProject = await ProjectModel.create({ imageUrl });
     res.status(201).json(newProject);
+
   } catch (error: any) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("Create Project Error:", error);
+    // If an error occurs after a file was uploaded, try to clean it up
+    if (req.file) {
+        fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ message: "Server error while creating project.", error: error.message });
   }
 };
 
