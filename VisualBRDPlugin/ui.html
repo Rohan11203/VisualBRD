@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* --- Basic Setup & Dark Theme --- */
+    :root {
+      --bg-color: #2C2C2C;
+      --text-color: #FFFFFF;
+      --text-color-secondary: #A0A0A0;
+      --primary-color: #0D99FF;
+      --primary-color-hover: #0B7DD9;
+      --disabled-color: #555555;
+      --border-color: #444444;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    .container {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    /* --- Header Section --- */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .header svg {
+      width: 24px;
+      height: 24px;
+    }
+    .header h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    /* --- Main Content --- */
+    .content-body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .status-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .status-text {
+      font-size: 0.8rem;
+      color: var(--text-color-secondary);
+    }
+
+    /* --- Button Styling --- */
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover { background-color: var(--primary-color-hover); }
+    button:disabled {
+      background-color: var(--disabled-color);
+      color: var(--text-color-secondary);
+      cursor: not-allowed;
+    }
+
+    /* --- Link for success message --- */
+    a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <!-- A simple SVG logo for a professional touch -->
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 7L12 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22V12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 7L12 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 4.5L7 9.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h1>VisualBRD Exporter</h1>
+    </div>
+
+    <div class="content-body">
+      <div class="status-section">
+        <p id="status" class="status-text">Select a frame to export.</p>
+      </div>
+      <button id="export-button">Export</button>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const exportButton = document.getElementById('export-button');
+
+    window.onmessage = async (event) => {
+      const { type, payload } = event.data.pluginMessage;
+      if (type === 'EXPORT_RESULT') {
+        const imageBlob = new Blob([payload], { type: 'image/png' });
+        await uploadImage(imageBlob);
+      } else if (type === 'ERROR') {
+        statusEl.innerHTML = `<span style="color: #FF6B6B;">${payload.message}</span>`;
+        exportButton.disabled = false;
+      }
+    };
+
+    async function uploadImage(blob) {
+      try {
+        statusEl.textContent = 'Uploading to server...';
+        const formData = new FormData();
+        formData.append('imageUrl', blob, 'figma-export.png');
+
+        // IMPORTANT: Use the correct backend URL for creating a project
+        const response = await fetch('http://localhost:3000/api/v1/projects/create', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Server error: ${response.status}`);
+        }
+
+        const newProject = await response.json();
+        // Provide a clickable link to the new project
+        statusEl.innerHTML = `Success! <a href="http://localhost:3001/projects/${newProject._id}" target="_blank">View Project</a>`;
+
+      } catch (error) {
+        statusEl.innerHTML = `<span style="color: #FF6B6B;">Upload failed: ${error.message}</span>`;
+      } finally {
+        exportButton.disabled = false;
+      }
+    }
+
+    exportButton.onclick = () => {
+      statusEl.textContent = 'Processing in Figma...';
+      exportButton.disabled = true;
+      parent.postMessage({ pluginMessage: { type: 'EXPORT_FRAME' } }, '*');
+    };
+  </script>
+</body>
+</html>
+
