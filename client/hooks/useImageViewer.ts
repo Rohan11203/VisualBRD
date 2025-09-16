@@ -3,7 +3,7 @@ import { useEffect, useState, WheelEvent as ReactWheelEvent } from "react";
 export const useImageViewer = () => {
   const [zoom, setZoom] = useState(1);
   const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 3;
+  const MAX_ZOOM = 5;
   const ZOOM_SPEED = 0.02;
 
   useEffect(() => {

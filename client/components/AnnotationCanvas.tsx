@@ -4,6 +4,7 @@ import React, {
   SyntheticEvent,
   MouseEvent,
   forwardRef,
+  useEffect,
 } from "react";
 import type { Annotation, ImageDimensions } from "@/types";
 import AnnotationMarker from "./AnnotationMaker";
@@ -64,28 +65,38 @@ const AnnotationCanvas = forwardRef<HTMLDivElement, AnnotationCanvasProps>(
         ref={imageContainerRef}
         style={{ touchAction: "none", height: "calc(100vh - 8rem)" }}
       >
-        <div className="absolute   top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2">
+        <div className="absolute  min-h-full  ">
           <div
-            className="relative transition-transform duration-200 ease-out"
-            style={{ transform: `scale(${zoom})` }}
-            ref={ref}
+            style={{
+              paddingTop: `120px`,
+              paddingBottom: `120px`,
+              paddingLeft: `120px`,
+              paddingRight: `120px`,
+            }}
           >
-            <img
-              src={imageUrl}
-              alt="Figma design"
-              className="max-w-full max-h-full object-contain"
-              onLoad={handleImageLoad}
-            />
-            <div className="annotations-layer absolute top-0 left-0 w-full h-full">
-              {imageDimensions &&
-                annotations.map((anno) => (
-                  <AnnotationMarker
-                    key={anno._id}
-                    annotation={anno}
-                    imageDimensions={imageDimensions}
-                    onClick={(e: any) => onMarkerClick(e, anno)}
-                  />
-                ))}
+            <div
+              className="relative transition-transform duration-200 ease-out"
+              style={{ transform: `scale(${zoom})` }}
+              ref={ref}
+            >
+              <img
+                src={imageUrl}
+                alt="Figma design"
+                className="max-w-full max-h-full object-contain"
+                onLoad={handleImageLoad}
+              />
+              <div className="annotations-layer absolute top-0 left-0 w-full h-full">
+                {imageDimensions &&
+                  annotations.map((anno) => (
+                    <AnnotationMarker
+                    ref={ref}
+                      key={anno._id}
+                      annotation={anno}
+                      imageDimensions={imageDimensions}
+                      onClick={(e: any) => onMarkerClick(e, anno)}
+                    />
+                  ))}
+              </div>
             </div>
           </div>
         </div>
