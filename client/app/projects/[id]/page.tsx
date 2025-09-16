@@ -13,50 +13,27 @@ import axios from "axios";
 import AnnotationForm from "../../../components/AnnotationForm";
 import AnnotationDetailView from "../../../components/AnnotationDetailView";
 import * as htmlToImage from "html-to-image";
-
-interface Annotation {
-  _id: string;
-  x: number;
-  y: number;
-  marker: string;
-  componentId?: string;
-  section?: string;
-  interactivity: String;
-  isRequired?: boolean;
-  isApiAvailable?: boolean;
-}
-
-interface Project {
-  _id: string;
-  imageUrl: string;
-  annotations: Annotation[];
-}
-
-interface NewAnnotation {
-  x: number;
-  y: number;
-}
-
-interface ImageDimensions {
-  naturalWidth: number;
-  naturalHeight: number;
-}
-
-interface FormData {
-  marker: string;
-  componentId: string;
-  section: string;
-  interactivity: string;
-  isRequired: boolean;
-  isApiAvailable: boolean;
-}
+import type {
+  Annotation,
+  FormData,
+  ImageDimensions,
+  NewAnnotation,
+  Project,
+} from "@/types";
+import { useProject } from "@/hooks/useProject";
+import { useImageViewer } from "@/hooks/useImageViewer";
+import { useImageExport } from "@/hooks/useImageExport";
 
 export default function ProjectPage() {
-  const params = useParams();
-  const id = params.id as string;
+  const { id, project, setProject, error } = useProject();
+  const { zoom, handleWheel, handleZoomIn, handleZoomOut } = useImageViewer();
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [error, setError] = useState<string>("");
+  const imageContentRef = useRef<HTMLDivElement>(null); // Ref for the element to screenshot
+
+  const { isExporting, handleExport } = useImageExport(
+    imageContentRef,
+    project?._id
+  );
   const [newAnnotation, setNewAnnotation] = useState<NewAnnotation | null>(
     null
   );
@@ -65,66 +42,7 @@ export default function ProjectPage() {
   const [selectedAnnotation, setSelectedAnnotation] =
     useState<Annotation | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
-  const [isExporting, setIsExporting] = useState<boolean>(false);
-
-  const imageContentRef = useRef<HTMLDivElement>(null); // Ref for the element to screenshot
-
-  // for zoom effect
-  const [zoom, setZoom] = useState(1);
-  const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 3;
-  const ZOOM_SPEED = 0.02;
-
-  useEffect(() => {
-    const preventZoom = (e: WheelEvent) => {
-      if (e.ctrlKey) {
-        e.preventDefault();
-      }
-    };
-
-    // Add the event listener with the capture phase
-    document.addEventListener("wheel", preventZoom, { passive: false });
-
-    // Cleanup
-    return () => {
-      document.removeEventListener("wheel", preventZoom);
-    };
-  }, []);
-
-  const handleWheel = (e: ReactWheelEvent<HTMLDivElement>) => {
-    if (e.ctrlKey || e.metaKey) {
-      const delta = -Math.sign(e.deltaY);
-      setZoom((currentZoom) => {
-        const newZoom = currentZoom + delta * ZOOM_SPEED;
-        return Math.min(Math.max(newZoom, MIN_ZOOM), MAX_ZOOM);
-      });
-    }
-  };
-
-  const handleZoomIn = () => {
-    setZoom((currentZoom) => Math.min(currentZoom + ZOOM_SPEED, MAX_ZOOM));
-  };
-
-  const handleZoomOut = () => {
-    setZoom((currentZoom) => Math.max(currentZoom - ZOOM_SPEED, MIN_ZOOM));
-  };
-
-  // --- Data Fetching Effect ---
-  useEffect(() => {
-    if (id) {
-      axios
-        .get(`http://localhost:3000/api/v1/projects/${id}`)
-        .then((response) => {
-          setProject(response.data);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch project:", err);
-          setError(
-            "Could not load project. Please check the ID and try again."
-          );
-        });
-    }
-  }, [id]);
+  // const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // --- Event Handlers ---
   const handleImageLoad = (e: SyntheticEvent<HTMLImageElement, Event>) => {
@@ -191,49 +109,6 @@ export default function ProjectPage() {
     e.stopPropagation(); // Prevent the main canvas click from firing
     setSelectedAnnotation(annotation);
     setNewAnnotation(null); // Ensure the new annotation form is closed
-  };
-
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      // 1. Capture the screenshot as a Blob
-      const imageBlob = await htmlToImage.toBlob(imageContentRef.current!, {
-        quality: 0.95,
-      });
-      if (!imageBlob) {
-        throw new Error("Failed to create image from canvas.");
-      }
-
-      // 2. Create FormData to send the file
-      const formData = new FormData();
-      formData.append("annotatedImage", imageBlob, `specsync-export-${id}.png`);
-
-      console.log(formData)
-      // 3. Send the file to the backend using a POST request
-      const response = await axios({
-        url: `http://localhost:3000/api/v1/projects/${id}/export`, // The endpoint is the same
-        method: "POST", // The method is now POST
-        data: formData,
-        responseType: "blob", // We still expect a file back
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      // 4. Handle the download (this part is the same as before)
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `BRD-${project?._id || "export"}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert("Failed to export the BRD. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
