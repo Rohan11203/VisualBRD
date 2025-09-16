@@ -8,21 +8,20 @@ import {
   SyntheticEvent,
   WheelEvent as ReactWheelEvent,
 } from "react";
-import { useParams } from "next/navigation";
 import axios from "axios";
 import AnnotationForm from "../../../components/AnnotationForm";
 import AnnotationDetailView from "../../../components/AnnotationDetailView";
-import * as htmlToImage from "html-to-image";
 import type {
   Annotation,
   FormData,
   ImageDimensions,
   NewAnnotation,
-  Project,
 } from "@/types";
 import { useProject } from "@/hooks/useProject";
 import { useImageViewer } from "@/hooks/useImageViewer";
 import { useImageExport } from "@/hooks/useImageExport";
+import ProjectHeader from "@/components/ProjectHeader";
+import AnnotationCanvas from "@/components/AnnotationCanvas";
 
 export default function ProjectPage() {
   const { id, project, setProject, error } = useProject();
@@ -37,42 +36,42 @@ export default function ProjectPage() {
   const [newAnnotation, setNewAnnotation] = useState<NewAnnotation | null>(
     null
   );
-  const [imageDimensions, setImageDimensions] =
-    useState<ImageDimensions | null>(null);
   const [selectedAnnotation, setSelectedAnnotation] =
     useState<Annotation | null>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-  // const [isExporting, setIsExporting] = useState<boolean>(false);
 
-  // --- Event Handlers ---
-  const handleImageLoad = (e: SyntheticEvent<HTMLImageElement, Event>) => {
-    setImageDimensions({
-      naturalWidth: e.currentTarget.naturalWidth,
-      naturalHeight: e.currentTarget.naturalHeight,
-    });
+  const handleDeselect = () => {
+    setNewAnnotation(null);
+    setSelectedAnnotation(null);
   };
 
-  const handleCanvasClick = (e: MouseEvent<HTMLDivElement>) => {
+  const handleCanvasClick = (
+    e: MouseEvent<HTMLDivElement>,
+    dimensions: {
+      naturalWidth: number;
+      naturalHeight: number;
+      clientWidth: number;
+      clientHeight: number;
+    }
+  ) => {
     if (newAnnotation || selectedAnnotation) {
-      setNewAnnotation(null);
-      setSelectedAnnotation(null);
+      handleDeselect();
       return;
     }
-    if (!imageContainerRef.current) return;
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    const imageElement = imageContainerRef.current.querySelector("img");
-    if (!imageElement) return;
 
+    // Calculation to place a new annotation
+    const rect = e.currentTarget.getBoundingClientRect();
     const { naturalWidth, naturalHeight, clientWidth, clientHeight } =
-      imageElement;
+      dimensions;
+
     const widthRatio = naturalWidth / (clientWidth * zoom);
     const heightRatio = naturalHeight / (clientHeight * zoom);
     const xOffset = (rect.width - clientWidth * zoom) / 2;
     const yOffset = (rect.height - clientHeight * zoom) / 2;
 
-    const xOnImage = (e.clientX - rect.left - xOffset) * widthRatio;
-    const yOnImage = (e.clientY - rect.top - yOffset) * heightRatio;
-    setNewAnnotation({ x: xOnImage, y: yOnImage });
+    const x = (e.clientX - rect.left - xOffset) * widthRatio;
+    const y = (e.clientY - rect.top - yOffset) * heightRatio;
+
+    setNewAnnotation({ x, y });
   };
 
   const handleSaveAnnotation = (formData: FormData) => {
@@ -98,10 +97,6 @@ export default function ProjectPage() {
       .catch((err) => console.error("Failed to save annotation:", err));
   };
 
-  const handleCancelAnnotation = () => {
-    setNewAnnotation(null);
-  };
-
   const handleMarkerClick = (
     e: MouseEvent<HTMLDivElement>,
     annotation: Annotation
@@ -116,113 +111,34 @@ export default function ProjectPage() {
 
   return (
     <main className="w-full h-screen flex flex-col bg-gray-100 p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 shrink-0">
-          Project: {project._id}
-        </h1>
+      <div>
+        <ProjectHeader
+          projectId={project._id}
+          zoomLevel={zoom}
+          isExporting={isExporting}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onExport={handleExport}
+        />
 
-        <button
-          onClick={handleExport}
-          disabled={isExporting}
-          className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {isExporting ? "Exporting..." : "Export to Excel"}
-        </button>
-
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={handleZoomOut}
-            className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-          <span className="min-w-[60px] text-center">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            onClick={handleZoomIn}
-            className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-        </div>
+        <AnnotationCanvas
+          ref={imageContentRef}
+          imageUrl={project.imageUrl}
+          annotations={project.annotations}
+          zoom={zoom}
+          onWheel={handleWheel}
+          onCanvasClick={handleCanvasClick}
+          onMarkerClick={handleMarkerClick}
+        />
       </div>
-      <div
-        className="relative w-full  flex-grow max-w-6xl mx-auto shadow-lg cursor-crosshair bg-gray-800 rounded-md overflow-auto  "
-        onClick={handleCanvasClick}
-        onWheel={handleWheel}
-        ref={imageContainerRef}
-        style={{ touchAction: "none", height: "calc(100vh - 8rem)" }}
-      >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div
-            className="relative transition-transform duration-200 ease-out"
-            style={{ transform: `scale(${zoom})` }}
-            ref={imageContentRef}
-          >
-            <img
-              src={project.imageUrl}
-              alt="Figma design"
-              className="max-w-full max-h-full object-contain"
-              onLoad={handleImageLoad}
-            />
-            <div className="annotations">
-              {imageDimensions &&
-                project.annotations.map((anno) => {
-                  const leftPercent =
-                    (anno.x / imageDimensions.naturalWidth) * 100;
-                  const topPercent =
-                    (anno.y / imageDimensions.naturalHeight) * 100;
-                  return (
-                    <div
-                      key={anno._id}
-                      className="absolute w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white shadow-md -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
-                      style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
-                      title={anno.marker}
-                      onClick={(e) => handleMarkerClick(e, anno)}
-                    >
-                      <span className="absolute  bg-black/70 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap -translate-y-full -translate-x-1/2 left-1/2 -top-2">
-                        {anno.marker}
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-        {newAnnotation && imageDimensions && (
+
+      <div className="">
+        {newAnnotation && (
           <AnnotationForm
-            x={
-              (newAnnotation.x / imageDimensions.naturalWidth) *
-              imageContainerRef.current!.querySelector("img")!.clientWidth
-            }
-            y={
-              (newAnnotation.y / imageDimensions.naturalHeight) *
-              imageContainerRef.current!.querySelector("img")!.clientHeight
-            }
+            x={newAnnotation.x}
+            y={newAnnotation.y}
             onSave={handleSaveAnnotation}
-            onCancel={handleCancelAnnotation}
+            onCancel={() => setNewAnnotation(null)}
           />
         )}
         {/* Conditionally render the detail view */}
