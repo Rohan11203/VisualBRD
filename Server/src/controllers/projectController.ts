@@ -12,7 +12,7 @@ export interface RequestWithFile extends Request {
 export const getProjectByID = async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    console.log(projectId)
+    console.log(projectId);
     const project = await ProjectModel.findById(projectId).populate(
       "annotations"
     );
@@ -29,7 +29,7 @@ export const getProjectByID = async (req: Request, res: Response) => {
 
 export const createProject = async (req: RequestWithFile, res: Response) => {
   try {
-    console.log("here")
+    console.log("here");
     // 1. Check if a file was successfully saved by multer
     if (!req.file) {
       return res.status(400).json({ message: "Image file is required." });
@@ -49,14 +49,16 @@ export const createProject = async (req: RequestWithFile, res: Response) => {
     // 5. Create the new project in the database with the Cloudinary URL
     const newProject = await ProjectModel.create({ imageUrl });
     res.status(201).json(newProject);
-
   } catch (error: any) {
     console.error("Create Project Error:", error);
     // If an error occurs after a file was uploaded, try to clean it up
     if (req.file) {
-        fs.unlinkSync(req.file.path);
+      fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ message: "Server error while creating project.", error: error.message });
+    res.status(500).json({
+      message: "Server error while creating project.",
+      error: error.message,
+    });
   }
 };
 
@@ -92,6 +94,21 @@ export const addAnnotationToProject = async (req: Request, res: Response) => {
   }
 };
 
+export const updateAnnotationPosition = async (req: Request, res: Response) => {
+  try {
+    const annotationId = req.params.annotationId;
+    
+    const { x, y } = req.body;
+    
+    await AnnotationModel.findByIdAndUpdate(annotationId, {$set: { x: x, y: y }});
+    res.status(204).send();
+    console.log(`Annotation with id ${annotationId} has updated`);
+  } catch (error) {
+    res.status(404).send("Annotation not found");
+    console.log(`Annotation not found.`);
+  }
+};
+
 export const exportProjectAsExcel = async (
   req: RequestWithFile,
   res: Response
@@ -101,7 +118,9 @@ export const exportProjectAsExcel = async (
 
     // First, check if Multer successfully processed and attached a file to the request.
     if (!req.file) {
-      return res.status(400).json({ message: "An annotated image file is required for the export." });
+      return res.status(400).json({
+        message: "An annotated image file is required for the export.",
+      });
     }
 
     // 1. Read the temporary image file that Multer saved into a buffer.
@@ -111,13 +130,15 @@ export const exportProjectAsExcel = async (
     fs.unlinkSync(req.file.path);
 
     // 3. Fetch the project data and its associated annotations from the database.
-    const project = await ProjectModel.findById(projectId).populate("annotations");
+    const project = await ProjectModel.findById(projectId).populate(
+      "annotations"
+    );
 
-    
     if (!project) {
-      return res.status(404).json({ message: "The specified project was not found." });
+      return res
+        .status(404)
+        .json({ message: "The specified project was not found." });
     }
-
 
     // 4. Call the Excel service, passing it the project data and the image buffer to do the heavy lifting.
     //@ts-ignore
@@ -135,13 +156,14 @@ export const exportProjectAsExcel = async (
 
     // 6. Send the generated Excel file buffer back to the user.
     res.send(excelBuffer);
-
   } catch (error: any) {
     console.error("An error occurred during the export process:", error);
     // If an error happens after a file was uploaded, try to clean it up.
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ message: "An internal server error occurred during the file export." });
+    res.status(500).json({
+      message: "An internal server error occurred during the file export.",
+    });
   }
 };
