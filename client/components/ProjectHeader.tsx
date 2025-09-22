@@ -16,6 +16,7 @@ const ZoomIcon = () => (
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
+    className="text-black"
   >
     <line x1="12" y1="5" x2="12" y2="19"></line>
     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -30,6 +31,7 @@ const MinusIcon = () => (
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
+    className="text-black"
   >
     <line x1="5" y1="12" x2="19" y2="12"></line>
   </svg>
@@ -45,7 +47,7 @@ export default function ProjectHeader({
 }: ProjectHeaderProps) {
   return (
     <div className="flex justify-between items-center mb-6">
-      <h1 className="text-3xl font-bold text-gray-800 shrink-0">
+      <h1 className="text-3xl font-bold  shrink-0">
         Project: {projectId}
       </h1>
 
@@ -59,7 +61,7 @@ export default function ProjectHeader({
 
       <div className="flex gap-2 items-center">
         <button
-          onClick={onZoomOut}
+          onClick={onZoomIn}
           className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full transition-colors"
         >
           <ZoomIcon />
@@ -68,7 +70,7 @@ export default function ProjectHeader({
           {Math.round(zoomLevel * 100)}%
         </span>
         <button
-          onClick={onZoomIn}
+          onClick={onZoomOut}
           className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full transition-colors"
         >
           <MinusIcon />

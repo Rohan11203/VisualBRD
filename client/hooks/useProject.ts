@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 
 export const useProject = () => {
   const params = useParams();
-  const id = params.id as string;
+  const id = params.screenId as string;
 
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string>("");
   useEffect(() => {
     if (id) {
       axios
-        .get(`http://localhost:3000/api/v1/projects/${id}`)
+        .get(`http://localhost:3000/api/v1/screens/${id}`, { withCredentials: true })
         .then((response) => {
           setProject(response.data);
         })

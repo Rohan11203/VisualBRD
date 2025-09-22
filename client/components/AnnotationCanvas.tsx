@@ -65,15 +65,8 @@ const AnnotationCanvas = forwardRef<HTMLDivElement, AnnotationCanvasProps>(
         ref={imageContainerRef}
         style={{ touchAction: "none", height: "calc(100vh - 8rem)" }}
       >
-        <div className="absolute  min-h-full  ">
-          <div
-            style={{
-              paddingTop: `120px`,
-              paddingBottom: `120px`,
-              paddingLeft: `120px`,
-              paddingRight: `120px`,
-            }}
-          >
+        <div className="absolute  min-h-full">
+          
             <div
               className="relative transition-transform duration-200 ease-out"
               style={{ transform: `scale(${zoom})` }}
@@ -98,7 +91,6 @@ const AnnotationCanvas = forwardRef<HTMLDivElement, AnnotationCanvasProps>(
                   ))}
               </div>
             </div>
-          </div>
         </div>
       </div>
     );

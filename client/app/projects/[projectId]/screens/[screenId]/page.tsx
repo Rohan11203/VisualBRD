@@ -9,8 +9,8 @@ import {
   WheelEvent as ReactWheelEvent,
 } from "react";
 import axios from "axios";
-import AnnotationForm from "../../../components/AnnotationForm";
-import AnnotationDetailView from "../../../components/AnnotationDetailView";
+import AnnotationForm from "@/components/AnnotationForm";
+import AnnotationDetailView from "@/components/AnnotationDetailView";
 import type {
   Annotation,
   FormData,
@@ -31,7 +31,7 @@ export default function ProjectPage() {
 
   const { isExporting, handleExport } = useImageExport(
     imageContentRef,
-    project?._id
+    id
   );
   const [newAnnotation, setNewAnnotation] = useState<NewAnnotation | null>(
     null
@@ -83,8 +83,9 @@ export default function ProjectPage() {
     };
     axios
       .post(
-        `http://localhost:3000/api/v1/projects/${id}/annotations`,
-        annotationData
+        `http://localhost:3000/api/v1/screens/${id}/annotations`,
+        annotationData,
+        { withCredentials: true }
       )
       .then((response) => {
         setProject((prev) =>
@@ -110,7 +111,7 @@ export default function ProjectPage() {
   if (!project) return <p className="text-center mt-10">Loading project...</p>;
 
   return (
-    <main className="w-full h-screen flex flex-col bg-gray-100 p-8">
+    <main className="w-full h-screen flex flex-col bg-black text-white p-8">
       <div>
         <ProjectHeader
           projectId={project._id}

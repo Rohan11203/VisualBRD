@@ -55,10 +55,13 @@ const AnnotationMarker: React.FC<AnnotationMarkerProps> = ({
 
     try {
       await axios.put(
-        `http://localhost:3000/api/v1/projects/${id}/annotations/${annotation._id}/coordinates`,
+        `http://localhost:3000/api/v1/screens/${id}/annotations/${annotation._id}/coordinates`,
         {
           x: position.x,
           y: position.y,
+        },
+        {
+          withCredentials: true,
         }
       );
     } catch (error) {
@@ -101,7 +104,7 @@ const AnnotationMarker: React.FC<AnnotationMarkerProps> = ({
       onClick={onClick}
       onMouseDown={handleMouseDown}
     >
-      <span className="absolute bg-black/70 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap -translate-y-full -translate-x-1/2 left-1/2 -top-2">
+      <span className="absolute bg-black/70 text-white px-2 py-1 opacity-60 rounded-md text-xs whitespace-nowrap -translate-y-full -translate-x-1/2 left-1/2 -top-2">
         {annotation.marker}
       </span>
     </div>
