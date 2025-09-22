@@ -1,19 +1,20 @@
 import { Router } from "express";
-import {
-  addAnnotationToProject,
-  createProject,
-  exportProjectAsExcel,
-  getProjectByID,
-  updateAnnotationPosition,
-} from "../controllers/projectController.js";
+
 import upload from "../config/multer.js";
+import {
+  createProject,
+  getProjectById,
+  getProjects,
+} from "../controllers/projectController.js";
+import { protect } from "../auth/index.js";
 
 export const projectRouter = Router();
 
-projectRouter.get("/:projectId", getProjectByID);
-projectRouter.post("/create",upload.single('imageUrl'), createProject);
-
-projectRouter.post("/:projectId/annotations", addAnnotationToProject);
-projectRouter.put("/:projectId/annotations/:annotationId/coordinates", updateAnnotationPosition);
-
-projectRouter.post("/:projectId/export",upload.single("annotatedImage"), exportProjectAsExcel)
+projectRouter.get("/", protect, getProjects);
+projectRouter.get("/:projectId", protect, getProjectById);
+projectRouter.post(
+  "/create",
+  protect,
+  upload.single("imageUrl"),
+  createProject
+);

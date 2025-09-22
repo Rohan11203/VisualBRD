@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const annotationSchema = new mongoose.Schema(
   {
-    project: {
+    screen: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
+      ref: "Screen",
       required: true,
     },
     x: { type: Number, required: true },
@@ -13,7 +13,7 @@ const annotationSchema = new mongoose.Schema(
     // --- VBRD Specific Fields  ---
 
     // 'Marker' column: The main title for the annotation.
-    marker: { type: String, required: true, default: "Untitled Marker" },
+    marker: { type: String, required: true },
 
     componentId: { type: String },
     section: { type: String }, // e.g., 'Header', 'Product Card'

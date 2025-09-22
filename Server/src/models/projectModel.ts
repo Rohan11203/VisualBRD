@@ -2,19 +2,29 @@ import mongoose, { Schema } from "mongoose";
 
 const projectSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      required: true,
+      default: "Untitled Project",
+    },
+    screens: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Screen",
+      },
+    ],
     imageUrl: {
       type: String,
       require: true,
     },
 
-    // List of all annotations that belong to this project.
-    // This array will just hold the unique IDs of the annotations.
-
-    annotations: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Annotation",
-      }],
-  },{
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  {
     timestamps: true,
   }
 );
