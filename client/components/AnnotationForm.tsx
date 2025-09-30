@@ -51,7 +51,7 @@ export default function AnnotationForm({ x, y, onSave, onCancel }: AnnotationFor
 
   return (
     <div
-      className="absolute bottom-10 right-10 bg-white rounded-lg shadow-2xl p-6 w-96 border border-gray-200"
+      className="absolute  bg-white rounded-lg shadow-2xl p-6 w-96 border border-gray-200"
       // style={{ left: `${x + 20}px`, top: `${y}px` }} // Position form next to the click
       onClick={(e) => e.stopPropagation()} // Prevent clicks inside the form from closing it
     >

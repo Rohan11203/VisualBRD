@@ -22,6 +22,7 @@ import { useImageViewer } from "@/hooks/useImageViewer";
 import { useImageExport } from "@/hooks/useImageExport";
 import ProjectHeader from "@/components/ProjectHeader";
 import AnnotationCanvas from "@/components/AnnotationCanvas";
+import Sidebar from "@/components/Sidebar";
 
 export default function ProjectPage() {
   const { id, project, setProject, error } = useProject();
@@ -29,10 +30,7 @@ export default function ProjectPage() {
 
   const imageContentRef = useRef<HTMLDivElement>(null); // Ref for the element to screenshot
 
-  const { isExporting, handleExport } = useImageExport(
-    imageContentRef,
-    id
-  );
+  const { isExporting, handleExport } = useImageExport(imageContentRef, id);
   const [newAnnotation, setNewAnnotation] = useState<NewAnnotation | null>(
     null
   );
@@ -111,44 +109,53 @@ export default function ProjectPage() {
   if (!project) return <p className="text-center mt-10">Loading project...</p>;
 
   return (
-    <main className="w-full h-screen flex flex-col bg-black text-white p-8">
-      <div>
-        <ProjectHeader
-          projectId={project._id}
-          zoomLevel={zoom}
-          isExporting={isExporting}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onExport={handleExport}
-        />
+    <main className="w-full h-screen   bg-black text-white overflow-hidden">
+      {/* --- Main Canvas Area (Left Side) --- */}
+      <div className="bg-[#1E1E1E]"> 
+          <ProjectHeader
+            projectId={project.name}
+            zoomLevel={zoom}
+            isExporting={isExporting}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onExport={handleExport}
+          />
+        </div>
+      <div className="flex">
+        
+        <div className="bg-[#1E1E1E] h-screen flex flex-col flex-grow">
+          <AnnotationCanvas
+            ref={imageContentRef}
+            imageUrl={project.imageUrl}
+            annotations={project.annotations}
+            zoom={zoom}
+            // selectedAnnotationId={selectedAnnotation?._id} // Pass selected ID for highlighting
+            onWheel={handleWheel}
+            onCanvasClick={handleCanvasClick}
+            onMarkerClick={handleMarkerClick}
+          />
+        </div>
 
-        <AnnotationCanvas
-          ref={imageContentRef}
-          imageUrl={project.imageUrl}
-          annotations={project.annotations}
-          zoom={zoom}
-          onWheel={handleWheel}
-          onCanvasClick={handleCanvasClick}
-          onMarkerClick={handleMarkerClick}
-        />
-      </div>
-
-      <div className="">
         {newAnnotation && (
-          <AnnotationForm
-            x={newAnnotation.x}
-            y={newAnnotation.y}
+          <>
+            <AnnotationForm
+              x={newAnnotation.x}
+              y={newAnnotation.y}
+              onSave={handleSaveAnnotation}
+              onCancel={() => setNewAnnotation(null)}
+            />
+          </>
+        )}
+
+        {/* --- Sidebar Area (Right Side) --- */}
+        <div className="flex-shrink-0 w-1/3 max-w-sm">
+          <Sidebar
+            newAnnotation={newAnnotation}
+            selectedAnnotation={selectedAnnotation}
             onSave={handleSaveAnnotation}
-            onCancel={() => setNewAnnotation(null)}
+            onCancel={handleDeselect}
           />
-        )}
-        {/* Conditionally render the detail view */}
-        {selectedAnnotation && (
-          <AnnotationDetailView
-            annotation={selectedAnnotation}
-            onClose={() => setSelectedAnnotation(null)}
-          />
-        )}
+        </div>
       </div>
     </main>
   );

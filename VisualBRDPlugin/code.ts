@@ -1,5 +1,31 @@
 // This file runs in Figma's secure environment.
 
+// This function recursively walks through the layers of a Figma node
+// and creates a simplified data structure for us to use.
+function traverseNode(node: SceneNode): any {
+  if (!node) return null;
+
+  const simplifiedNode = {
+    figmaId: node.id,
+    name: node.name,
+    type: node.type,
+    x: node.x,
+    y: node.y,
+    width: node.width,
+    height: node.height,
+    parentId: node.parent?.id,
+    children: [] as any[],
+  };
+
+  if ('children' in node) {
+    for (const child of node.children) {
+      simplifiedNode.children.push(traverseNode(child));
+    }
+  }
+
+  return simplifiedNode;
+}
+
 figma.showUI(__html__, { width: 320, height: 280 }); // A little taller for the new input
 
 figma.ui.onmessage = async (msg) => {
@@ -22,7 +48,8 @@ figma.ui.onmessage = async (msg) => {
       }
       const node = selection[0];
       const imageData = await node.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 2 } });
-      figma.ui.postMessage({ type: 'EXPORT_RESULT', payload: imageData });
+      const layerData = traverseNode(node)
+      figma.ui.postMessage({ type: 'EXPORT_RESULT', payload: {imageData, layerData} });
     } catch (error: any) {
       figma.ui.postMessage({ type: 'ERROR', payload: { message: error.message } });
     }

@@ -59,7 +59,7 @@ const AnnotationCanvas = forwardRef<HTMLDivElement, AnnotationCanvasProps>(
 
     return (
       <div
-        className="relative w-full  flex-grow max-w-6xl mx-auto shadow-lg cursor-crosshair bg-gray-900 rounded-md overflow-auto"
+        className="relative w-full webkit-scrollbar flex-grow max-w-6xl px-20 py-40 mx-auto shadow-lg cursor-crosshair bg-[#191919] rounded-md overflow-auto"
         onClick={handleCanvasClick}
         onWheel={onWheel}
         ref={imageContainerRef}

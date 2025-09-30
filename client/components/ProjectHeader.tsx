@@ -46,10 +46,8 @@ export default function ProjectHeader({
   onExport,
 }: ProjectHeaderProps) {
   return (
-    <div className="flex justify-between items-center mb-6">
-      <h1 className="text-3xl font-bold  shrink-0">
-        Project: {projectId}
-      </h1>
+    <div className="flex justify-between w-3/4   py-4">
+      <h1 className="text-xl pl-4 shrink-0">Screen Name: {projectId}</h1>
 
       <button
         onClick={onExport}

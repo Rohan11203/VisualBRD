@@ -39,7 +39,7 @@ export const getScreenById = async (req: AuthRequest, res: Response) => {
 export const addScreenToProject = async (req: AuthRequest, res: Response) => {
   try {
     const { projectId } = req.params;
-
+    console.log("Figma Data", req.body)
     // Authorization: Find the project and verify the current user is the owner.
     const project = await ProjectModel.findById(projectId);
     //@ts-ignore
