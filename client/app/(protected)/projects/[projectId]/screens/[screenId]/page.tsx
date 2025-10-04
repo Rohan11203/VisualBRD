@@ -23,6 +23,7 @@ import { useImageExport } from "@/hooks/useImageExport";
 import ProjectHeader from "@/components/ProjectHeader";
 import AnnotationCanvas from "@/components/AnnotationCanvas";
 import Sidebar from "@/components/Sidebar";
+import { apiClient } from "@/lib/apiClient";
 
 export default function ProjectPage() {
   const { id, project, setProject, error } = useProject();
@@ -72,28 +73,29 @@ export default function ProjectPage() {
     setNewAnnotation({ x, y });
   };
 
-  const handleSaveAnnotation = (formData: FormData) => {
+  const handleSaveAnnotation = async (formData: FormData) => {
     if (!newAnnotation) return;
     const annotationData = {
       ...formData,
       x: newAnnotation.x,
       y: newAnnotation.y,
     };
-    axios
-      .post(
-        `http://localhost:3000/api/v1/screens/${id}/annotations`,
-        annotationData,
-        { withCredentials: true }
-      )
-      .then((response) => {
-        setProject((prev) =>
-          prev
-            ? { ...prev, annotations: [...prev.annotations, response.data] }
-            : null
-        );
-        setNewAnnotation(null);
-      })
-      .catch((err) => console.error("Failed to save annotation:", err));
+
+    try {
+      const savedAnnotation = await apiClient(`/screens/${id}/annotations`, {
+        method: "POST",
+        body: JSON.stringify(annotationData),
+      });
+
+      setProject((prev) =>
+        prev
+          ? { ...prev, annotations: [...prev.annotations, savedAnnotation] }
+          : null
+      );
+      setNewAnnotation(null);
+    } catch (err) {
+      console.error("Failed to save annotation:", err);
+    }
   };
 
   const handleMarkerClick = (
@@ -111,18 +113,17 @@ export default function ProjectPage() {
   return (
     <main className="w-full h-screen   bg-black text-white overflow-hidden">
       {/* --- Main Canvas Area (Left Side) --- */}
-      <div className="bg-[#1E1E1E]"> 
-          <ProjectHeader
-            projectId={project.name}
-            zoomLevel={zoom}
-            isExporting={isExporting}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onExport={handleExport}
-          />
-        </div>
+      <div className="bg-[#1E1E1E]">
+        <ProjectHeader
+          projectId={project.name}
+          zoomLevel={zoom}
+          isExporting={isExporting}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onExport={handleExport}
+        />
+      </div>
       <div className="flex">
-        
         <div className="bg-[#1E1E1E] h-screen flex flex-col flex-grow">
           <AnnotationCanvas
             ref={imageContentRef}

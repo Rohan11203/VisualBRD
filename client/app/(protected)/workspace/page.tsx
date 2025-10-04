@@ -6,13 +6,14 @@ import Link from "next/link";
 import { Folder, Plus, X } from "lucide-react";
 import { projectNew } from "next/dist/build/swc/generated-native";
 import { setDefaultAutoSelectFamilyAttemptTimeout } from "net";
+import { apiClient } from "@/lib/apiClient";
 
 // Define the type for a project in the list
 interface Project {
   _id: string;
   name: string;
-  createdAt:string;
-  updatedAt: string
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function DashboardPage() {
@@ -22,23 +23,20 @@ export default function DashboardPage() {
   const [newProjectName, setNewProjectName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchProjects = () => {
-    axios
-      .get("http://localhost:3000/api/v1/projects", { withCredentials: true })
-      .then((response) => {
-        setProjects(response.data);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch projects:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await apiClient("/projects");
+      setProjects(data);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => {
     fetchProjects();
   }, []);
-
   const handleCreateClick = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -47,11 +45,10 @@ export default function DashboardPage() {
     setIsSubmitting(true);
 
     try {
-      await axios.post(
-        "http://localhost:3000/api/v1/projects/create",
-        { name: newProjectName },
-        { withCredentials: true }
-      );
+      await apiClient("/projects/create", {
+        method: "POST",
+        body: JSON.stringify({ name: newProjectName }),
+      });
 
       setIsCreateDialogOpen(false);
       setNewProjectName("");

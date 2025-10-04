@@ -1,3 +1,4 @@
+import { apiClient } from "@/lib/apiClient";
 import { Project } from "@/types";
 import axios from "axios";
 import { useParams } from "next/navigation";
@@ -10,20 +11,22 @@ export const useProject = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string>("");
   useEffect(() => {
-    if (id) {
-      axios
-        .get(`http://localhost:3000/api/v1/screens/${id}`, { withCredentials: true })
-        .then((response) => {
-          setProject(response.data);
-        })
-        .catch((err) => {
+    const fetchProject = async () => {
+      if (id) {
+        try {
+          const data = await apiClient(`/screens/${id}`);
+          setProject(data);
+        } catch (err) {
           console.error("Failed to fetch project:", err);
           setError(
             "Could not load project. Please check the ID and try again."
           );
-        });
-    }
+        }
+      }
+    };
+
+    fetchProject();
   }, [id]);
 
-  return { id, project, setProject, error};
+  return { id, project, setProject, error };
 };

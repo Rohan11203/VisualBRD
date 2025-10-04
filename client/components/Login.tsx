@@ -2,21 +2,23 @@
 
 import useAuthStore from "@/store/authStore";
 import { log } from "console";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 export default function Login() {
-  const { login, isLoading, error } = useAuthStore();
+  const { loginWithCredentials, isLoading, error } = useAuthStore();
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const success = await login(email, password);
-    console.log("Checking ",success)
+    const success = await loginWithCredentials(email, password);
 
     if (success) {
-      window.location.href = "http://localhost:3001/workspace";
+      router.push("/workspace");
     }
   };
 

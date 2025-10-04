@@ -1,37 +1,23 @@
 "use client";
 
+import useAuthStore from "@/store/authStore";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 export default function SIgnup() {
+  const { registerWithCredentials, isLoading, error } = useAuthStore();
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
 
-    try {
-      const res = await fetch("http://localhost:3000/api/v1/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message || "Registration failed");
-      }
-
-      // on success redirect to external workflow
-      window.location.href = "http://localhost:3001/workspace";
-    } catch (err: any) {
-      setError(err.message || "Registration failed");
-      setLoading(false);
+    const success = await registerWithCredentials(name, email, password);
+    if (success) {
+      router.push("/workspace");
     }
   };
 
@@ -62,7 +48,9 @@ export default function SIgnup() {
         </div>
 
         <div>
-          <label className="block text-sm text-neutral-300 mb-1">Password</label>
+          <label className="block text-sm text-neutral-300 mb-1">
+            Password
+          </label>
           <input
             type="password"
             className="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700"
@@ -76,10 +64,10 @@ export default function SIgnup() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isLoading}
           className="w-full py-2 bg-amber-500 text-black rounded-md font-medium"
         >
-          {loading ? "Creating..." : "Create account"}
+          {isLoading ? "Creating..." : "Create account"}
         </button>
       </form>
     </div>

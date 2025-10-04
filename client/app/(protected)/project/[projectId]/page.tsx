@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { apiClient } from "@/lib/apiClient";
 
 interface Screen {
   _id: string;
@@ -25,21 +26,25 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (projectId) {
-      // Fetch the specific project and its populated screens
-      axios.get(`http://localhost:3000/api/v1/projects/${projectId}`, { withCredentials: true })
-        .then(response => {
-          setProject(response.data);
-          setLoading(false);
-        })
-        .catch(error => {
+    const fetchProject = async () => {
+      if (projectId) {
+        setLoading(true);
+        try {
+          const data = await apiClient(`/projects/${projectId}`);
+          setProject(data);
+        } catch (error) {
           console.error("Failed to fetch project:", error);
+        } finally {
           setLoading(false);
-        });
-    }
+        }
+      }
+    };
+
+    fetchProject();
   }, [projectId]);
 
-  if (loading) return <p className="text-center mt-10">Loading project details...</p>;
+  if (loading)
+    return <p className="text-center mt-10">Loading project details...</p>;
   if (!project) return <p className="text-center mt-10">Project not found.</p>;
 
   return (
@@ -47,10 +52,17 @@ export default function ProjectDetailPage() {
       <h1 className="text-3xl font-bold mb-6 ">Project: {project.name}</h1>
       <h2 className="text-xl font-semibold mb-4 ">Screens</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {project.screens.map(screen => (
-          <Link href={`/projects/${projectId}/screens/${screen._id}`} key={screen._id}>
+        {project.screens.map((screen) => (
+          <Link
+            href={`/projects/${projectId}/screens/${screen._id}`}
+            key={screen._id}
+          >
             <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
-              <img src={screen.imageUrl} alt={screen.name} className="w-full h-48 object-contain" />
+              <img
+                src={screen.imageUrl}
+                alt={screen.name}
+                className="w-full h-48 object-contain"
+              />
               <div className="p-4">
                 <h3 className="font-bold text-black">{screen.name}</h3>
               </div>

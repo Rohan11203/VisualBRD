@@ -2,6 +2,7 @@ import React, { MouseEvent, useEffect, useRef, useState } from "react";
 import type { Annotation, ImageDimensions } from "@/types";
 import axios from "axios";
 import { useProject } from "@/hooks/useProject";
+import { apiClient } from "@/lib/apiClient";
 
 interface AnnotationMarkerProps {
   annotation: Annotation;
@@ -54,18 +55,19 @@ const AnnotationMarker: React.FC<AnnotationMarkerProps> = ({
     setIsDragging(false);
 
     try {
-      await axios.put(
-        `http://localhost:3000/api/v1/screens/${id}/annotations/${annotation._id}/coordinates`,
+      await apiClient(
+        `/screens/${id}/annotations/${annotation._id}/coordinates`,
         {
-          x: position.x,
-          y: position.y,
-        },
-        {
-          withCredentials: true,
+          method: "PUT",
+          body: JSON.stringify({
+            x: position.x,
+            y: position.y,
+          }),
         }
       );
     } catch (error) {
       console.error("Failed to update annotation position:", error);
+
       setPosition({ x: annotation.x, y: annotation.y });
     }
   };
