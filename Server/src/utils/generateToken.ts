@@ -18,7 +18,7 @@ const generateToken = (res: Response, userId: any) => {
   res.cookie("jwt", token, {
     httpOnly: true, // Prevents client-side JavaScript from accessing the cookie (XSS protection).
     secure: process.env.NODE_ENV !== "development", // Ensures the cookie is only sent over HTTPS in production.
-    sameSite: "none", // Provides protection against Cross-Site Request Forgery (CSRF) attacks.
+    sameSite: "lax", // Provides protection against Cross-Site Request Forgery (CSRF) attacks.
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds to match the token expiry.
   });
 };
